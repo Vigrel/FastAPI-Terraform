@@ -22,13 +22,7 @@ variable "tags" {
     Name = "allow_tls"
   }
 }
-
-# variable "ingress" {
-#   type        = map(string)
-#   description = "Configuration block for ingress rules. Can be specified multiple times for each ingress rule"
-# }
-
-# variable "egress" {
-#   type        = map(string)
-#   description = "Configuration block for egress rules. Can be specified multiple times for each egress rule"
-# }
+variable "ingress" {
+  type        = list(any)
+  description = "Configuration block for ingress rules. Can be specified multiple times for each ingress rule"
+}

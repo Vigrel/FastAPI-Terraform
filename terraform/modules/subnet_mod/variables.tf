@@ -8,6 +8,7 @@ variable "vpc_id" {
 variable "cidr_block" {
   type        = string
   description = "CIDR block of the desired subnet"
+  default     = "172.16.10.0/24"
 }
 
 variable "availability_zone" {
