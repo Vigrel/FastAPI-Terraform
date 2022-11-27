@@ -5,7 +5,6 @@ terraform {
       version = "~> 4.40"
     }
   }
-
   required_version = ">= 1.2.0"
 }
 
@@ -15,8 +14,7 @@ provider "aws" {
 }
 
 module "vpc" {
-  source     = "./modules/vpc_mod"
-  cidr_block = "172.16.0.0/16"
+  source = "./modules/vpc_mod"
 }
 
 module "security_group" {
@@ -24,12 +22,12 @@ module "security_group" {
   name        = "instance-sg"
   description = "security group for production grade web servers"
   vpc_id      = module.vpc.id
+  ingress     = var.ingress
 }
 
 module "subnet" {
   source            = "./modules/subnet_mod"
   vpc_id            = module.vpc.id
-  cidr_block        = "172.16.10.0/24"
   availability_zone = "us-east-1a"
 }
 
@@ -37,6 +35,7 @@ module "instance" {
   source                 = "./modules/instance_mod"
   subnet_id              = module.subnet.id
   vpc_security_group_ids = [module.security_group.id]
+  for_each               = var.instances
+  ami                    = each.value.ami
+  instance_type          = each.value.instance_type
 }
-
-
