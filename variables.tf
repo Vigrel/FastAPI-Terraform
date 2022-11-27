@@ -7,6 +7,12 @@ variable "instances" {
   }))
 }
 
+variable "users" {
+  type = map(object({
+    name = string
+  }))
+}
+
 variable "ingress" {
   type        = list(any)
   description = "Configuration block for ingress rules. Can be specified multiple times for each ingress rule"

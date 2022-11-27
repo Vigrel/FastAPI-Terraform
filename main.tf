@@ -39,3 +39,8 @@ module "instance" {
   ami                    = each.value.ami
   instance_type          = each.value.instance_type
 }
+
+resource "aws_iam_user" "new_user" {
+  for_each = var.users
+  name     = each.value.name
+}
