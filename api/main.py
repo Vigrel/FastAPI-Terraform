@@ -8,7 +8,7 @@ from api.core.models import db
 from api.core.schemas import IngressRules, Instance, UserIAM
 
 app = FastAPI()
-os.system("terraform init")
+# os.system("terraform init")
 
 
 @app.get(
@@ -144,13 +144,12 @@ async def delete_user(user_id: str) -> dict[str]:
 
 @app.post(
     "/terraform/{action}",
-    # response_model=list[Instance.InstanceDB],
     status_code=status.HTTP_200_OK,
     tags=["Terraform"],
     summary="Run terraform apply | destroy",
     description="Return all instances in database",
 )
-async def get_destroy_apply(action: str):
+async def post_destroy_apply(action: str):
     data = {"ingress": [], "instances": [], "users": []}
     [data["ingress"].append(i.dict()) for i in db.ingress]
 
@@ -172,3 +171,52 @@ async def get_destroy_apply(action: str):
         json.dump(data, openfile)
 
     os.system(f"terraform {action} -auto-approve -var-file='variables.tfvars.json'")
+
+
+@app.get(
+    "/terraform/tfstate",
+    status_code=status.HTTP_200_OK,
+    tags=["Terraform"],
+    summary="Get tfstate",
+)
+async def get_tfstate():
+    output = {}
+    with open("terraform.tfstate") as f:
+        tfstate = json.load(f)
+
+    for resource in tfstate["resources"]:
+        if resource["type"] == "aws_iam_user":
+            user = resource["instances"][0]["index_key"]
+            output[f"aws_iam_user {user}"] = {
+                "name": resource["instances"][0]["attributes"]["name"],
+                "unique_id": resource["instances"][0]["attributes"]["unique_id"],
+            }
+        if resource["type"] == "aws_instance":
+            ami = resource["instances"][0]["attributes"]["ami"]
+            output[f"{ami}"] = {
+                "availability_zone": resource["instances"][0]["attributes"][
+                    "availability_zone"
+                ],
+                "vpc_security_group_ids": resource["instances"][0]["attributes"][
+                    "vpc_security_group_ids"
+                ],
+                "instance_type": resource["instances"][0]["attributes"][
+                    "instance_type"
+                ],
+                "subnet_id": resource["instances"][0]["attributes"]["subnet_id"],
+            }
+        if resource["type"] == "aws_security_group":
+            output["aws_security_group"] = {
+                "ingress_rules": resource["instances"][0]["attributes"]["ingress"],
+            }
+        if resource["type"] == "aws_subnet":
+            output["aws_subnet"] = {
+                "cidr_block": resource["instances"][0]["attributes"]["cidr_block"],
+                "vpc_id": resource["instances"][0]["attributes"]["vpc_id"],
+            }
+        if resource["type"] == "aws_vpc":
+            output["vpc_id"] = {
+                "cidr_block": resource["instances"][0]["attributes"]["cidr_block"],
+            }
+
+    return output
